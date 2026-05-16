@@ -1,0 +1,35 @@
+# Tomcat
+server:
+  port: 9201
+
+# Spring
+spring: 
+  application:
+    # 应用名称
+    name: ruoyi-system
+  profiles:
+    # 环境配置
+    active: dev
+  cloud:
+    nacos:
+      username: ${CONFIG_USERNAME:change_me}
+      password: ${CONFIG_PASSWORD:change_me}
+      discovery:
+        # 服务注册地址
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        ip: 127.0.0.1
+      config:
+        # 配置中心地址
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+  config:
+    # 配置文件格式
+    file-extension: yml
+    import:
+      - nacos:application-${spring.profiles.active}.${spring.config.file-extension}
+      - nacos:${spring.application.name}-${spring.profiles.active}.${spring.config.file-extension}
+
+# Local fallback. The company Nacos ruoyi-system-dev.yml may omit this block,
+# but the system service needs XML mapper locations during startup.
+mybatis:
+  typeAliasesPackage: com.ruoyi.system
+  mapperLocations: classpath*:mapper/**/*.xml

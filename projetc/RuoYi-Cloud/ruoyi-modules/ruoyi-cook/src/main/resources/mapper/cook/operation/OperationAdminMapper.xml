@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.operation.mapper.OperationAdminMapper">
+
+    <resultMap id="DashboardSummaryResult" type="com.ruoyi.cook.operation.vo.AdminDashboardSummaryVo">
+        <result property="totalUsers" column="total_users"/>
+        <result property="totalRecipes" column="total_recipes"/>
+        <result property="totalPosts" column="total_posts"/>
+        <result property="pendingRecipeCount" column="pending_recipe_count"/>
+        <result property="pendingPostCount" column="pending_post_count"/>
+        <result property="processingFeedbackCount" column="processing_feedback_count"/>
+        <result property="pendingReportCount" column="pending_report_count"/>
+        <result property="onlineBannerCount" column="online_banner_count"/>
+    </resultMap>
+
+    <resultMap id="TrendResult" type="com.ruoyi.cook.operation.vo.DashboardTrendPointVo">
+        <result property="date" column="date"/>
+        <result property="value" column="value"/>
+    </resultMap>
+
+    <resultMap id="CategoryRatioResult" type="com.ruoyi.cook.operation.vo.CategoryRatioVo">
+        <result property="categoryCode" column="category_code"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="count" column="count"/>
+    </resultMap>
+
+    <resultMap id="OperationLogResult" type="com.ruoyi.cook.operation.vo.RecentOperationLogVo">
+        <id property="id" column="id"/>
+        <result property="adminId" column="admin_id"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizId" column="biz_id"/>
+        <result property="action" column="action"/>
+        <result property="remark" column="remark"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="AdminUserResult" type="com.ruoyi.cook.operation.vo.AdminUserVo">
+        <id property="id" column="id"/>
+        <result property="phone" column="phone"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="gender" column="gender"/>
+        <result property="region" column="region"/>
+        <result property="bio" column="bio"/>
+        <result property="status" column="status"/>
+        <result property="recipeCount" column="recipe_count"/>
+        <result property="postCount" column="post_count"/>
+        <result property="followerCount" column="follower_count"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="AdminGroupResult" type="com.ruoyi.cook.operation.vo.AdminGroupVo">
+        <id property="id" column="id"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="ownerNickname" column="owner_nickname"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="name" column="name"/>
+        <result property="avatarMediaId" column="avatar_media_id"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="intro" column="intro"/>
+        <result property="notice" column="notice"/>
+        <result property="status" column="status"/>
+        <result property="memberCount" column="member_count"/>
+        <result property="messageCount" column="message_count"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectDashboardSummary" resultMap="DashboardSummaryResult">
+        select
+            (select count(1) from cook_users where deleted_at is null) as total_users,
+            (select count(1) from cook_recipes where deleted_at is null) as total_recipes,
+            (select count(1) from cook_posts where deleted_at is null) as total_posts,
+            (select count(1) from cook_recipes where deleted_at is null and review_status = 'pending_review') as pending_recipe_count,
+            (select count(1) from cook_posts where deleted_at is null and status = 'pending_review') as pending_post_count,
+            (select count(1) from cook_feedbacks where deleted_at is null and status = 'processing') as processing_feedback_count,
+            (select count(1) from cook_reports where deleted_at is null and status = 'pending') as pending_report_count,
+            (select count(1) from cook_banners where deleted_at is null and status = 'online') as online_banner_count
+    </select>
+
+    <select id="selectUserGrowthTrend" resultMap="TrendResult">
+        select date_format(created_at, '%Y-%m-%d') as date, count(1) as value
+        from cook_users
+        where deleted_at is null
+          and created_at &gt;= date_sub(curdate(), interval #{days} day)
+        group by date_format(created_at, '%Y-%m-%d')
+        order by date asc
+    </select>
+
+    <select id="selectRecipeCategoryRatios" resultMap="CategoryRatioResult">
+        select r.category_code,
+               coalesce(c.name, r.category_code) as category_name,
+               count(1) as count
+        from cook_recipes r
+        left join cook_categories c on c.category_code collate utf8mb4_general_ci = r.category_code and c.deleted_at is null
+        where r.deleted_at is null
+        group by r.category_code, c.name
+        order by count desc, r.category_code asc
+    </select>
+
+    <select id="selectRecentOperationLogs" resultMap="OperationLogResult">
+        select id, admin_id, biz_type, biz_id, action, remark, created_at
+        from cook_admin_operation_logs
+        order by created_at desc, id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectAdminUsers" resultMap="AdminUserResult">
+        select u.id, u.phone, u.nickname, u.avatar_url, u.gender, u.region, u.bio, u.status, u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.target_type = 'user'
+                   and ci.target_id = u.id
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as follower_count
+        from cook_users u
+        where u.deleted_at is null
+        <if test="status != null and status != ''">
+            and u.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (u.nickname like concat('%', #{keyword}, '%') or u.phone like concat('%', #{keyword}, '%'))
+        </if>
+        order by u.created_at desc, u.id desc
+    </select>
+
+    <select id="selectAdminUserDetail" parameterType="Long" resultMap="AdminUserResult">
+        select u.id, u.phone, u.nickname, u.avatar_url, u.gender, u.region, u.bio, u.status, u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.target_type = 'user'
+                   and ci.target_id = u.id
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as follower_count
+        from cook_users u
+        where u.id = #{id}
+          and u.deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertUserPenalty" parameterType="com.ruoyi.cook.operation.domain.UserPenalty" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_user_penalties (user_id, penalty_type, reason, start_at, end_at, operator_id)
+        values (#{userId}, #{penaltyType}, #{reason}, #{startAt}, #{endAt}, #{operatorId})
+    </insert>
+
+    <select id="selectAdminGroups" resultMap="AdminGroupResult">
+        select g.id, g.owner_id, u.nickname as owner_nickname, g.conversation_id, g.name,
+               g.avatar_media_id, ma.url as avatar_url, g.intro, g.notice,
+               g.status, g.created_at,
+               (select count(1) from cook_conversation_members cm where cm.conversation_id = g.conversation_id and cm.status = 'normal') as member_count,
+               (select count(1) from cook_messages m where m.conversation_id = g.conversation_id and m.deleted_at is null) as message_count
+        from `cook_groups` g
+        inner join cook_users u on u.id = g.owner_id and u.deleted_at is null
+        left join cook_media_assets ma on ma.id = g.avatar_media_id and ma.deleted_at is null
+        where g.deleted_at is null
+        <if test="status != null and status != ''">
+            and g.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (g.name like concat('%', #{keyword}, '%') or u.nickname like concat('%', #{keyword}, '%'))
+        </if>
+        order by g.created_at desc, g.id desc
+    </select>
+
+    <select id="selectAdminGroupDetail" parameterType="Long" resultMap="AdminGroupResult">
+        select g.id, g.owner_id, u.nickname as owner_nickname, g.conversation_id, g.name,
+               g.avatar_media_id, ma.url as avatar_url, g.intro, g.notice,
+               g.status, g.created_at,
+               (select count(1) from cook_conversation_members cm where cm.conversation_id = g.conversation_id and cm.status = 'normal') as member_count,
+               (select count(1) from cook_messages m where m.conversation_id = g.conversation_id and m.deleted_at is null) as message_count
+        from `cook_groups` g
+        inner join cook_users u on u.id = g.owner_id and u.deleted_at is null
+        left join cook_media_assets ma on ma.id = g.avatar_media_id and ma.deleted_at is null
+        where g.id = #{id}
+          and g.deleted_at is null
+        limit 1
+    </select>
+
+    <update id="dissolveGroup" parameterType="Long">
+        update `cook_groups`
+        set status = 'dissolved',
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.auth.mapper.CookUserMapper">
+
+    <resultMap id="CookUserResult" type="com.ruoyi.cook.auth.domain.CookUser">
+        <id property="id" column="id"/>
+        <result property="phone" column="phone"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="gender" column="gender"/>
+        <result property="birthday" column="birthday"/>
+        <result property="region" column="region"/>
+        <result property="bio" column="bio"/>
+        <result property="status" column="status"/>
+        <result property="interestTagsJson" column="interest_tags_json"/>
+        <result property="oauthAccountsJson" column="oauth_accounts_json"/>
+        <result property="statsJson" column="stats_json"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <sql id="selectCookUserColumns">
+        id, phone, password_hash, nickname, avatar_url, gender, birthday, region, bio, status,
+        interest_tags_json, oauth_accounts_json, stats_json, created_at, updated_at, deleted_at
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="CookUserResult">
+        select <include refid="selectCookUserColumns"/>
+        from cook_users
+        where id = #{id}
+          and deleted_at is null
+    </select>
+
+    <select id="selectByPhone" parameterType="String" resultMap="CookUserResult">
+        select <include refid="selectCookUserColumns"/>
+        from cook_users
+        where phone = #{phone}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertUser" parameterType="com.ruoyi.cook.auth.domain.CookUser" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_users (
+            phone, password_hash, nickname, avatar_url, gender, birthday, region, bio, status,
+            interest_tags_json, oauth_accounts_json, stats_json
+        ) values (
+            #{phone}, #{passwordHash}, #{nickname}, #{avatarUrl}, #{gender}, #{birthday}, #{region}, #{bio},
+            #{status}, #{interestTagsJson}, #{oauthAccountsJson}, #{statsJson}
+        )
+    </insert>
+
+    <update id="updatePassword">
+        update cook_users
+        set password_hash = #{passwordHash},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateProfile" parameterType="com.ruoyi.cook.auth.domain.CookUser">
+        update cook_users
+        <set>
+            <if test="nickname != null and nickname != ''">nickname = #{nickname},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="region != null">region = #{region},</if>
+            <if test="bio != null">bio = #{bio},</if>
+            updated_at = current_timestamp
+        </set>
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateInterestTags">
+        update cook_users
+        set interest_tags_json = #{interestTagsJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateStatus">
+        update cook_users
+        set status = #{status},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

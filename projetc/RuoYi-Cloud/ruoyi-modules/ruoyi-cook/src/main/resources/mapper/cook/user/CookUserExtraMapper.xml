@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.user.mapper.CookUserExtraMapper">
+
+    <resultMap id="UserPublicProfileResult" type="com.ruoyi.cook.user.domain.vo.UserPublicProfileVo">
+        <id property="id" column="id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="bio" column="bio"/>
+        <result property="gender" column="gender"/>
+        <result property="region" column="region"/>
+        <result property="status" column="status"/>
+        <result property="recipeCount" column="recipe_count"/>
+        <result property="postCount" column="post_count"/>
+        <result property="followerCount" column="follower_count"/>
+        <result property="followingCount" column="following_count"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="UserInteractionResult" type="com.ruoyi.cook.user.domain.vo.UserInteractionVo">
+        <result property="targetType" column="target_type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="actionType" column="action_type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="authorNickname" column="author_nickname"/>
+        <result property="interactedAt" column="interacted_at"/>
+    </resultMap>
+
+    <select id="selectPublicProfile" parameterType="Long" resultMap="UserPublicProfileResult">
+        select u.id,
+               u.nickname,
+               u.avatar_url,
+               u.bio,
+               u.gender,
+               u.region,
+               u.status,
+               u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.target_type = 'user'
+                   and ci.target_id = u.id
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as follower_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.user_id = u.id
+                   and ci.target_type = 'user'
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as following_count
+        from cook_users u
+        where u.id = #{userId}
+          and u.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectRecommendedUsers" resultMap="UserPublicProfileResult">
+        select u.id,
+               u.nickname,
+               u.avatar_url,
+               u.bio,
+               u.gender,
+               u.region,
+               u.status,
+               u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.target_type = 'user'
+                   and ci.target_id = u.id
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as follower_count,
+               (select count(1) from cook_content_interactions ci
+                 where ci.user_id = u.id
+                   and ci.target_type = 'user'
+                   and ci.action_type = 'follow'
+                   and ci.status = 'active') as following_count
+        from cook_users u
+        where u.deleted_at is null
+          and u.status in ('normal', 'muted')
+        order by recipe_count desc, post_count desc, follower_count desc, u.id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectFollowers" resultMap="UserPublicProfileResult">
+        select u.id,
+               u.nickname,
+               u.avatar_url,
+               u.bio,
+               u.gender,
+               u.region,
+               u.status,
+               u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions f
+                 where f.target_type = 'user'
+                   and f.target_id = u.id
+                   and f.action_type = 'follow'
+                   and f.status = 'active') as follower_count,
+               (select count(1) from cook_content_interactions f
+                 where f.user_id = u.id
+                   and f.target_type = 'user'
+                   and f.action_type = 'follow'
+                   and f.status = 'active') as following_count
+        from cook_content_interactions ci
+        inner join cook_users u on u.id = ci.user_id and u.deleted_at is null
+        where ci.target_type = 'user'
+          and ci.target_id = #{userId}
+          and ci.action_type = 'follow'
+          and ci.status = 'active'
+        order by ci.updated_at desc
+    </select>
+
+    <select id="selectFollowing" resultMap="UserPublicProfileResult">
+        select u.id,
+               u.nickname,
+               u.avatar_url,
+               u.bio,
+               u.gender,
+               u.region,
+               u.status,
+               u.created_at,
+               (select count(1) from cook_recipes r where r.author_id = u.id and r.deleted_at is null) as recipe_count,
+               (select count(1) from cook_posts p where p.user_id = u.id and p.deleted_at is null) as post_count,
+               (select count(1) from cook_content_interactions f
+                 where f.target_type = 'user'
+                   and f.target_id = u.id
+                   and f.action_type = 'follow'
+                   and f.status = 'active') as follower_count,
+               (select count(1) from cook_content_interactions f
+                 where f.user_id = u.id
+                   and f.target_type = 'user'
+                   and f.action_type = 'follow'
+                   and f.status = 'active') as following_count
+        from cook_content_interactions ci
+        inner join cook_users u on u.id = ci.target_id and u.deleted_at is null
+        where ci.user_id = #{userId}
+          and ci.target_type = 'user'
+          and ci.action_type = 'follow'
+          and ci.status = 'active'
+        order by ci.updated_at desc
+    </select>
+
+    <select id="selectMyInteractions" resultMap="UserInteractionResult">
+        select ci.target_type,
+               ci.target_id,
+               ci.action_type,
+               rv.title as title,
+               rv.intro as content,
+               ma.url as cover_url,
+               au.nickname as author_nickname,
+               ci.updated_at as interacted_at
+        from cook_content_interactions ci
+        inner join cook_recipes r on r.id = ci.target_id and r.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = r.current_version_id and rv.deleted_at is null
+        left join cook_media_assets ma on ma.id = rv.cover_media_id and ma.deleted_at is null
+        inner join cook_users au on au.id = r.author_id and au.deleted_at is null
+        where ci.user_id = #{userId}
+          and ci.action_type = #{actionType}
+          and ci.status = 'active'
+          and ci.target_type = 'recipe'
+          <if test="targetType != null and targetType != ''">
+            and ci.target_type = #{targetType}
+          </if>
+        union all
+        select ci.target_type,
+               ci.target_id,
+               ci.action_type,
+               concat('动态 #', p.id) as title,
+               p.content as content,
+               ma.url as cover_url,
+               au.nickname as author_nickname,
+               ci.updated_at as interacted_at
+        from cook_content_interactions ci
+        inner join cook_posts p on p.id = ci.target_id and p.deleted_at is null
+        left join cook_media_assets ma on ma.id = cast(json_unquote(json_extract(p.media_ids_json, '$[0]')) as unsigned) and ma.deleted_at is null
+        inner join cook_users au on au.id = p.user_id and au.deleted_at is null
+        where ci.user_id = #{userId}
+          and ci.action_type = #{actionType}
+          and ci.status = 'active'
+          and ci.target_type = 'post'
+          <if test="targetType != null and targetType != ''">
+            and ci.target_type = #{targetType}
+          </if>
+        order by interacted_at desc
+    </select>
+
+</mapper>

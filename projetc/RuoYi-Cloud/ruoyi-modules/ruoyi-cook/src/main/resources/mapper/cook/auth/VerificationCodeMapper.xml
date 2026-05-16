@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.auth.mapper.VerificationCodeMapper">
+
+    <resultMap id="VerificationCodeResult" type="com.ruoyi.cook.auth.domain.VerificationCode">
+        <id property="id" column="id"/>
+        <result property="phone" column="phone"/>
+        <result property="scene" column="scene"/>
+        <result property="code" column="code"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="usedAt" column="used_at"/>
+        <result property="errorCount" column="error_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 插入验证码 -->
+    <insert id="insertCode" parameterType="com.ruoyi.cook.auth.domain.VerificationCode"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into cook_verification_codes (phone, scene, code, expires_at, error_count)
+        values (#{phone}, #{scene}, #{code}, #{expiresAt}, #{errorCount})
+    </insert>
+
+    <!-- 查询最新一条有效（未使用+未过期）的验证码 -->
+    <select id="selectLatestValid" resultMap="VerificationCodeResult">
+        select id, phone, scene, code, expires_at, used_at, error_count, created_at, updated_at
+        from cook_verification_codes
+        where phone = #{phone}
+          and scene = #{scene}
+          and used_at is null
+          and expires_at > current_timestamp
+        order by created_at desc
+        limit 1
+    </select>
+
+    <!-- 查询手机号+场景下最新一条记录（不限状态），用于发送频率控制 -->
+    <select id="selectLatestByPhoneAndScene" resultMap="VerificationCodeResult">
+        select id, phone, scene, code, expires_at, used_at, error_count, created_at, updated_at
+        from cook_verification_codes
+        where phone = #{phone}
+          and scene = #{scene}
+        order by created_at desc
+        limit 1
+    </select>
+
+    <!-- 标记单条为已使用（保留兼容） -->
+    <update id="markUsed" parameterType="Long">
+        update cook_verification_codes
+        set used_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+    </update>
+
+    <!-- 将手机号+场景下所有未使用验证码批量标记为已使用，防止旧码重用 -->
+    <update id="markAllUsedByPhoneAndScene">
+        update cook_verification_codes
+        set used_at = current_timestamp,
+            updated_at = current_timestamp
+        where phone = #{phone}
+          and scene = #{scene}
+          and used_at is null
+    </update>
+
+    <!-- 递增错误次数 -->
+    <update id="increaseErrorCount" parameterType="Long">
+        update cook_verification_codes
+        set error_count = error_count + 1,
+            updated_at = current_timestamp
+        where id = #{id}
+    </update>
+
+</mapper>

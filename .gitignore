@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+release/
+build/
+
+# Runtime logs and local data
+logs/
+*.log
+.codex-run/
+.playwright-cli/
+nacos-server-2.2.3/
+sentinel-1.8.9/
+智慧食刻-db-backups/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+config/cook-oss.yml
+*.pem
+*.key
+
+# Database exports
+*.sql
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.swp

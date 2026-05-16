@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.operation.mapper.OperationMapper">
+
+    <resultMap id="BannerResult" type="com.ruoyi.cook.operation.domain.Banner">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="subtitle" column="subtitle"/>
+        <result property="imageMediaId" column="image_media_id"/>
+        <result property="jumpType" column="jump_type"/>
+        <result property="jumpTarget" column="jump_target"/>
+        <result property="sortNo" column="sort_no"/>
+        <result property="status" column="status"/>
+        <result property="startAt" column="start_at"/>
+        <result property="endAt" column="end_at"/>
+        <result property="exposureCount" column="exposure_count"/>
+        <result property="clickCount" column="click_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <resultMap id="MediaResult" type="com.ruoyi.cook.operation.domain.MediaAsset">
+        <id property="id" column="id"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="fileType" column="file_type"/>
+        <result property="originalName" column="original_name"/>
+        <result property="url" column="url"/>
+        <result property="hlsUrl" column="hls_url"/>
+        <result property="status" column="status"/>
+        <result property="sizeBytes" column="size_bytes"/>
+        <result property="metadataJson" column="metadata_json"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <resultMap id="BannerVoResult" type="com.ruoyi.cook.operation.vo.BannerVo">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="subtitle" column="subtitle"/>
+        <result property="imageMediaId" column="image_media_id"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="jumpType" column="jump_type"/>
+        <result property="jumpTarget" column="jump_target"/>
+        <result property="sortNo" column="sort_no"/>
+        <result property="status" column="status"/>
+        <result property="clickCount" column="click_count"/>
+        <result property="startAt" column="start_at"/>
+        <result property="endAt" column="end_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="FeedbackVoResult" type="com.ruoyi.cook.operation.vo.FeedbackVo">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userNickname" column="user_nickname"/>
+        <result property="type" column="type"/>
+        <result property="content" column="content"/>
+        <result property="mediaIds" column="media_ids_json" typeHandler="com.ruoyi.cook.common.handler.JsonLongListTypeHandler"/>
+        <result property="contact" column="contact"/>
+        <result property="status" column="status"/>
+        <result property="replyContent" column="reply_content"/>
+        <result property="repliedAt" column="replied_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="ReportVoResult" type="com.ruoyi.cook.operation.vo.ReportVo">
+        <id property="id" column="id"/>
+        <result property="reporterId" column="reporter_id"/>
+        <result property="reporterNickname" column="reporter_nickname"/>
+        <result property="targetType" column="target_type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="reasonType" column="reason_type"/>
+        <result property="reason" column="reason"/>
+        <result property="mediaIds" column="media_ids_json" typeHandler="com.ruoyi.cook.common.handler.JsonLongListTypeHandler"/>
+        <result property="status" column="status"/>
+        <result property="handlerId" column="handler_id"/>
+        <result property="handleResult" column="handle_result"/>
+        <result property="handledAt" column="handled_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="MediaVoResult" type="com.ruoyi.cook.operation.vo.MediaAssetVo">
+        <id property="id" column="id"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="fileType" column="file_type"/>
+        <result property="originalName" column="original_name"/>
+        <result property="url" column="url"/>
+        <result property="hlsUrl" column="hls_url"/>
+        <result property="status" column="status"/>
+        <result property="sizeBytes" column="size_bytes"/>
+        <result property="metadata" column="metadata_json" typeHandler="com.ruoyi.cook.common.handler.JsonObjectTypeHandler"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="UploadSessionResult" type="com.ruoyi.cook.operation.domain.MediaUploadSession">
+        <id property="sessionId" column="session_id"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="objectKey" column="object_key"/>
+        <result property="originalName" column="original_name"/>
+        <result property="contentType" column="content_type"/>
+        <result property="sizeBytes" column="size_bytes"/>
+        <result property="fingerprint" column="fingerprint"/>
+        <result property="status" column="status"/>
+        <result property="mediaId" column="media_id"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <sql id="bannerVoColumns">
+        b.id, b.title, b.subtitle, b.image_media_id, ma.url as image_url, b.jump_type, b.jump_target, b.sort_no,
+        b.status, b.click_count, b.start_at, b.end_at, b.created_at
+    </sql>
+
+    <select id="selectActiveBanners" resultMap="BannerVoResult">
+        select <include refid="bannerVoColumns"/>
+        from cook_banners b
+        left join cook_media_assets ma on ma.id = b.image_media_id and ma.deleted_at is null
+        where b.deleted_at is null
+          and b.status = 'online'
+          and (b.start_at is null or b.start_at &lt;= #{now})
+          and (b.end_at is null or b.end_at &gt;= #{now})
+        order by b.sort_no asc, b.id desc
+    </select>
+
+    <select id="selectAdminBannerList" resultMap="BannerVoResult">
+        select <include refid="bannerVoColumns"/>
+        from cook_banners b
+        left join cook_media_assets ma on ma.id = b.image_media_id and ma.deleted_at is null
+        where b.deleted_at is null
+        <if test="status != null and status != ''">
+            and b.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (b.title like concat('%', #{keyword}, '%') or b.subtitle like concat('%', #{keyword}, '%'))
+        </if>
+        order by b.sort_no asc, b.id desc
+    </select>
+
+    <select id="selectBannerById" parameterType="Long" resultMap="BannerResult">
+        select id, title, subtitle, image_media_id, jump_type, jump_target, sort_no, status, start_at, end_at,
+               exposure_count, click_count, created_at, updated_at, deleted_at
+        from cook_banners
+        where id = #{id}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertBanner" parameterType="com.ruoyi.cook.operation.domain.Banner" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_banners (title, subtitle, image_media_id, jump_type, jump_target, sort_no, status, start_at, end_at)
+        values (#{title}, #{subtitle}, #{imageMediaId}, #{jumpType}, #{jumpTarget}, #{sortNo}, #{status}, #{startAt}, #{endAt})
+    </insert>
+
+    <update id="updateBanner" parameterType="com.ruoyi.cook.operation.domain.Banner">
+        update cook_banners
+        set title = #{title},
+            subtitle = #{subtitle},
+            image_media_id = #{imageMediaId},
+            jump_type = #{jumpType},
+            jump_target = #{jumpTarget},
+            sort_no = #{sortNo},
+            status = #{status},
+            start_at = #{startAt},
+            end_at = #{endAt},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="softDeleteBanner" parameterType="Long">
+        update cook_banners
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateBannerStatus">
+        update cook_banners
+        set status = #{status},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateBannerSort">
+        update cook_banners
+        set sort_no = #{sortNo},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="increaseBannerClick" parameterType="Long">
+        update cook_banners
+        set click_count = click_count + 1,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <select id="selectMyFeedbacks" parameterType="Long" resultMap="FeedbackVoResult">
+        select f.id, f.user_id, u.nickname as user_nickname, f.type, f.content, f.media_ids_json, f.contact,
+               f.status, f.reply_content, f.replied_at, f.created_at
+        from cook_feedbacks f
+        inner join cook_users u on u.id = f.user_id and u.deleted_at is null
+        where f.user_id = #{userId}
+          and f.deleted_at is null
+        order by f.created_at desc, f.id desc
+    </select>
+
+    <select id="selectMyFeedbackDetail" resultMap="FeedbackVoResult">
+        select f.id, f.user_id, u.nickname as user_nickname, f.type, f.content, f.media_ids_json, f.contact,
+               f.status, f.reply_content, f.replied_at, f.created_at
+        from cook_feedbacks f
+        inner join cook_users u on u.id = f.user_id and u.deleted_at is null
+        where f.id = #{id}
+          and f.user_id = #{userId}
+          and f.deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertFeedback" parameterType="com.ruoyi.cook.operation.domain.Feedback" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_feedbacks (user_id, type, content, media_ids_json, contact, status, reply_content, replied_at)
+        values (#{userId}, #{type}, #{content}, #{mediaIdsJson}, #{contact}, #{status}, #{replyContent}, #{repliedAt})
+    </insert>
+
+    <select id="selectAdminFeedbacks" resultMap="FeedbackVoResult">
+        select f.id, f.user_id, u.nickname as user_nickname, f.type, f.content, f.media_ids_json, f.contact,
+               f.status, f.reply_content, f.replied_at, f.created_at
+        from cook_feedbacks f
+        inner join cook_users u on u.id = f.user_id and u.deleted_at is null
+        where f.deleted_at is null
+        <if test="status != null and status != ''">
+            and f.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (u.nickname like concat('%', #{keyword}, '%') or f.content like concat('%', #{keyword}, '%'))
+        </if>
+        order by f.created_at desc, f.id desc
+    </select>
+
+    <select id="selectAdminFeedbackDetail" parameterType="Long" resultMap="FeedbackVoResult">
+        select f.id, f.user_id, u.nickname as user_nickname, f.type, f.content, f.media_ids_json, f.contact,
+               f.status, f.reply_content, f.replied_at, f.created_at
+        from cook_feedbacks f
+        inner join cook_users u on u.id = f.user_id and u.deleted_at is null
+        where f.id = #{id}
+          and f.deleted_at is null
+        limit 1
+    </select>
+
+    <update id="updateFeedback" parameterType="com.ruoyi.cook.operation.domain.Feedback">
+        update cook_feedbacks
+        set status = #{status},
+            reply_content = #{replyContent},
+            replied_at = #{repliedAt},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <select id="selectMyReports" parameterType="Long" resultMap="ReportVoResult">
+        select r.id, r.reporter_id, u.nickname as reporter_nickname, r.target_type, r.target_id, r.reason_type,
+               r.reason, r.media_ids_json, r.status, r.handler_id, r.handle_result, r.handled_at, r.created_at
+        from cook_reports r
+        inner join cook_users u on u.id = r.reporter_id and u.deleted_at is null
+        where r.reporter_id = #{userId}
+          and r.deleted_at is null
+        order by r.created_at desc, r.id desc
+    </select>
+
+    <select id="selectMyReportDetail" resultMap="ReportVoResult">
+        select r.id, r.reporter_id, u.nickname as reporter_nickname, r.target_type, r.target_id, r.reason_type,
+               r.reason, r.media_ids_json, r.status, r.handler_id, r.handle_result, r.handled_at, r.created_at
+        from cook_reports r
+        inner join cook_users u on u.id = r.reporter_id and u.deleted_at is null
+        where r.id = #{id}
+          and r.reporter_id = #{userId}
+          and r.deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertReport" parameterType="com.ruoyi.cook.operation.domain.Report" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_reports (reporter_id, target_type, target_id, reason_type, reason, media_ids_json, status, handler_id, handle_result, handled_at)
+        values (#{reporterId}, #{targetType}, #{targetId}, #{reasonType}, #{reason}, #{mediaIdsJson}, #{status}, #{handlerId}, #{handleResult}, #{handledAt})
+    </insert>
+
+    <select id="selectAdminReports" resultMap="ReportVoResult">
+        select r.id, r.reporter_id, u.nickname as reporter_nickname, r.target_type, r.target_id, r.reason_type,
+               r.reason, r.media_ids_json, r.status, r.handler_id, r.handle_result, r.handled_at, r.created_at
+        from cook_reports r
+        inner join cook_users u on u.id = r.reporter_id and u.deleted_at is null
+        where r.deleted_at is null
+        <if test="status != null and status != ''">
+            and r.status = #{status}
+        </if>
+        <if test="targetType != null and targetType != ''">
+            and r.target_type = #{targetType}
+        </if>
+        order by r.created_at desc, r.id desc
+    </select>
+
+    <select id="selectAdminReportDetail" parameterType="Long" resultMap="ReportVoResult">
+        select r.id, r.reporter_id, u.nickname as reporter_nickname, r.target_type, r.target_id, r.reason_type,
+               r.reason, r.media_ids_json, r.status, r.handler_id, r.handle_result, r.handled_at, r.created_at
+        from cook_reports r
+        inner join cook_users u on u.id = r.reporter_id and u.deleted_at is null
+        where r.id = #{id}
+          and r.deleted_at is null
+        limit 1
+    </select>
+
+    <update id="updateReport" parameterType="com.ruoyi.cook.operation.domain.Report">
+        update cook_reports
+        set status = #{status},
+            handler_id = #{handlerId},
+            handle_result = #{handleResult},
+            handled_at = #{handledAt},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <select id="selectAdminMediaAssets" resultMap="MediaVoResult">
+        select id, owner_id, file_type, original_name, url, hls_url, status, size_bytes, metadata_json, created_at
+        from cook_media_assets
+        where deleted_at is null
+          and status = 'ready'
+        <if test="fileType != null and fileType != ''">
+            and file_type = #{fileType}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and original_name like concat('%', #{keyword}, '%')
+        </if>
+        order by created_at desc, id desc
+    </select>
+
+    <select id="selectMediaById" parameterType="Long" resultMap="MediaResult">
+        select id, owner_id, biz_type, file_type, original_name, url, hls_url, status, size_bytes, metadata_json,
+               created_at, updated_at, deleted_at
+        from cook_media_assets
+        where id = #{id}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectMediaVoById" parameterType="Long" resultMap="MediaVoResult">
+        select id, owner_id, file_type, original_name, url, hls_url, status, size_bytes, metadata_json, created_at
+        from cook_media_assets
+        where id = #{id}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertMedia" parameterType="com.ruoyi.cook.operation.domain.MediaAsset" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_media_assets (owner_id, biz_type, file_type, original_name, url, hls_url, status, size_bytes, metadata_json)
+        values (#{ownerId}, #{bizType}, #{fileType}, #{originalName}, #{url}, #{hlsUrl}, #{status}, #{sizeBytes}, #{metadataJson})
+    </insert>
+
+    <update id="updateMediaUrl">
+        update cook_media_assets
+        set url = #{url},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateMediaAfterOssUpload">
+        update cook_media_assets
+        set url = #{url},
+            status = #{status},
+            size_bytes = #{sizeBytes},
+            metadata_json = #{metadataJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateMediaTranscodeStart">
+        update cook_media_assets
+        set status = #{status},
+            metadata_json = #{metadataJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateMediaTranscodeSuccess">
+        update cook_media_assets
+        set status = #{status},
+            hls_url = #{hlsUrl},
+            metadata_json = #{metadataJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateMediaTranscodeFailure">
+        update cook_media_assets
+        set status = #{status},
+            metadata_json = #{metadataJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <select id="selectReusableUploadSession" resultMap="UploadSessionResult">
+        select session_id, owner_id, object_key, original_name, content_type, size_bytes, fingerprint, status,
+               media_id, error_message, expires_at, created_at, updated_at, deleted_at
+        from cook_media_upload_sessions
+        where owner_id = #{ownerId}
+          and fingerprint = #{fingerprint}
+          and size_bytes = #{sizeBytes}
+          and status in ('pending', 'uploading', 'uploaded', 'transcoding')
+          and expires_at &gt; current_timestamp
+          and deleted_at is null
+        order by updated_at desc, created_at desc
+        limit 1
+    </select>
+
+    <select id="selectUploadSessionById" resultMap="UploadSessionResult">
+        select session_id, owner_id, object_key, original_name, content_type, size_bytes, fingerprint, status,
+               media_id, error_message, expires_at, created_at, updated_at, deleted_at
+        from cook_media_upload_sessions
+        where session_id = #{sessionId}
+          and owner_id = #{ownerId}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <insert id="insertUploadSession" parameterType="com.ruoyi.cook.operation.domain.MediaUploadSession">
+        insert into cook_media_upload_sessions (
+            session_id, owner_id, object_key, original_name, content_type, size_bytes, fingerprint, status,
+            media_id, error_message, expires_at
+        ) values (
+            #{sessionId}, #{ownerId}, #{objectKey}, #{originalName}, #{contentType}, #{sizeBytes}, #{fingerprint}, #{status},
+            #{mediaId}, #{errorMessage}, #{expiresAt}
+        )
+    </insert>
+
+    <update id="updateUploadSessionStatus">
+        update cook_media_upload_sessions
+        set status = #{status},
+            error_message = #{errorMessage},
+            updated_at = current_timestamp
+        where session_id = #{sessionId}
+          and owner_id = #{ownerId}
+          and deleted_at is null
+    </update>
+
+    <update id="completeUploadSession">
+        update cook_media_upload_sessions
+        set status = #{status},
+            media_id = #{mediaId},
+            error_message = #{errorMessage},
+            updated_at = current_timestamp
+        where session_id = #{sessionId}
+          and owner_id = #{ownerId}
+          and deleted_at is null
+    </update>
+
+    <update id="cancelUploadSession">
+        update cook_media_upload_sessions
+        set status = 'canceled',
+            deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where session_id = #{sessionId}
+          and owner_id = #{ownerId}
+          and deleted_at is null
+    </update>
+
+</mapper>

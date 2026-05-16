@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.ai.mapper.AiKnowledgeDocumentMapper">
+
+    <resultMap id="AiKnowledgeDocumentResult" type="com.ruoyi.cook.ai.domain.AiKnowledgeDocument">
+        <id property="id" column="id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="originalName" column="original_name"/>
+        <result property="relativePath" column="relative_path"/>
+        <result property="filePath" column="file_path"/>
+        <result property="fileHash" column="file_hash"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileType" column="file_type"/>
+        <result property="title" column="title"/>
+        <result property="status" column="status"/>
+        <result property="chunkCount" column="chunk_count"/>
+        <result property="lastIndexedAt" column="last_indexed_at"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <sql id="DocumentColumns">
+        id, file_name, original_name, relative_path, file_path, file_hash, file_size, file_type,
+        title, status, chunk_count, last_indexed_at, error_message, created_at, updated_at, deleted_at
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="AiKnowledgeDocumentResult">
+        select <include refid="DocumentColumns"/>
+        from cook_ai_knowledge_documents
+        where id = #{id}
+          and deleted_at is null
+    </select>
+
+    <select id="selectByRelativePath" parameterType="String" resultMap="AiKnowledgeDocumentResult">
+        select <include refid="DocumentColumns"/>
+        from cook_ai_knowledge_documents
+        where relative_path = #{relativePath}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectList" resultMap="AiKnowledgeDocumentResult">
+        select <include refid="DocumentColumns"/>
+        from cook_ai_knowledge_documents
+        where deleted_at is null
+        <if test="status != null and status != ''">
+            and status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (file_name like concat('%', #{keyword}, '%')
+                 or title like concat('%', #{keyword}, '%')
+                 or relative_path like concat('%', #{keyword}, '%'))
+        </if>
+        order by updated_at desc, id desc
+    </select>
+
+    <insert id="insertDocument" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeDocument" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_ai_knowledge_documents (
+            file_name, original_name, relative_path, file_path, file_hash, file_size,
+            file_type, title, status, chunk_count, error_message
+        ) values (
+            #{fileName}, #{originalName}, #{relativePath}, #{filePath}, #{fileHash}, #{fileSize},
+            #{fileType}, #{title}, #{status}, #{chunkCount}, #{errorMessage}
+        )
+    </insert>
+
+    <update id="updateFileSnapshot" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeDocument">
+        update cook_ai_knowledge_documents
+        set file_name = #{fileName},
+            original_name = #{originalName},
+            file_path = #{filePath},
+            file_hash = #{fileHash},
+            file_size = #{fileSize},
+            file_type = #{fileType},
+            title = #{title},
+            status = #{status},
+            error_message = #{errorMessage},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateIndexing">
+        update cook_ai_knowledge_documents
+        set status = 'indexing',
+            error_message = null,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateIndexed">
+        update cook_ai_knowledge_documents
+        set status = 'indexed',
+            chunk_count = #{chunkCount},
+            last_indexed_at = current_timestamp,
+            error_message = null,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateFailed">
+        update cook_ai_knowledge_documents
+        set status = 'failed',
+            error_message = #{errorMessage},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateOffline">
+        update cook_ai_knowledge_documents
+        set status = 'offline',
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+</mapper>

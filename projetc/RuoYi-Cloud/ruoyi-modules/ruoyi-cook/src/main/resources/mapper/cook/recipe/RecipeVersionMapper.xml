@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.recipe.mapper.RecipeVersionMapper">
+
+    <resultMap id="RecipeVersionResult" type="com.ruoyi.cook.recipe.domain.RecipeVersion">
+        <id property="id" column="id"/>
+        <result property="recipeId" column="recipe_id"/>
+        <result property="authorId" column="author_id"/>
+        <result property="versionNo" column="version_no"/>
+        <result property="title" column="title"/>
+        <result property="coverMediaId" column="cover_media_id"/>
+        <result property="intro" column="intro"/>
+        <result property="difficulty" column="difficulty"/>
+        <result property="cookTime" column="cook_time"/>
+        <result property="serving" column="serving"/>
+        <result property="ingredientsJson" column="ingredients_json"/>
+        <result property="stepsJson" column="steps_json"/>
+        <result property="tipsJson" column="tips_json"/>
+        <result property="videoJson" column="video_json"/>
+        <result property="status" column="status"/>
+        <result property="rejectReason" column="reject_reason"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <sql id="versionColumns">
+        id, recipe_id, author_id, version_no, title, cover_media_id, intro, difficulty, cook_time, serving,
+        ingredients_json, steps_json, tips_json, video_json, status, reject_reason, created_at, updated_at, deleted_at
+    </sql>
+
+    <sql id="prefixedVersionColumns">
+        v.id, v.recipe_id, v.author_id, v.version_no, v.title, v.cover_media_id, v.intro, v.difficulty, v.cook_time,
+        v.serving, v.ingredients_json, v.steps_json, v.tips_json, v.video_json, v.status, v.reject_reason,
+        v.created_at, v.updated_at, v.deleted_at
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="RecipeVersionResult">
+        select <include refid="versionColumns"/>
+        from cook_recipe_versions
+        where id = #{id}
+          and deleted_at is null
+    </select>
+
+    <select id="selectLatestByRecipeId" parameterType="Long" resultMap="RecipeVersionResult">
+        select <include refid="versionColumns"/>
+        from cook_recipe_versions
+        where recipe_id = #{recipeId}
+          and deleted_at is null
+        order by version_no desc
+        limit 1
+    </select>
+
+    <select id="selectLatestByRecipeIdForUpdate" parameterType="Long" resultMap="RecipeVersionResult">
+        select <include refid="versionColumns"/>
+        from cook_recipe_versions
+        where recipe_id = #{recipeId}
+          and deleted_at is null
+        order by version_no desc
+        limit 1
+        for update
+    </select>
+
+    <select id="selectCurrentByRecipeId" parameterType="Long" resultMap="RecipeVersionResult">
+        select <include refid="prefixedVersionColumns"/>
+        from cook_recipe_versions v
+        inner join cook_recipes r on r.current_version_id = v.id
+        where r.id = #{recipeId}
+          and r.deleted_at is null
+          and v.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectPendingByRecipeId" parameterType="Long" resultMap="RecipeVersionResult">
+        select <include refid="versionColumns"/>
+        from cook_recipe_versions
+        where recipe_id = #{recipeId}
+          and status = 'pending_review'
+          and deleted_at is null
+        order by version_no desc
+        limit 1
+    </select>
+
+    <select id="selectMaxVersionNo" parameterType="Long" resultType="Integer">
+        select max(version_no)
+        from cook_recipe_versions
+        where recipe_id = #{recipeId}
+          and deleted_at is null
+    </select>
+
+    <insert id="insertVersion" parameterType="com.ruoyi.cook.recipe.domain.RecipeVersion" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_recipe_versions (
+            recipe_id, author_id, version_no, title, cover_media_id, intro, difficulty, cook_time, serving,
+            ingredients_json, steps_json, tips_json, video_json, status, reject_reason
+        ) values (
+            #{recipeId}, #{authorId}, #{versionNo}, #{title}, #{coverMediaId}, #{intro}, #{difficulty}, #{cookTime}, #{serving},
+            #{ingredientsJson}, #{stepsJson}, #{tipsJson}, #{videoJson}, #{status}, #{rejectReason}
+        )
+    </insert>
+
+    <update id="updateVersion" parameterType="com.ruoyi.cook.recipe.domain.RecipeVersion">
+        update cook_recipe_versions
+        set title = #{title},
+            cover_media_id = #{coverMediaId},
+            intro = #{intro},
+            difficulty = #{difficulty},
+            cook_time = #{cookTime},
+            serving = #{serving},
+            ingredients_json = #{ingredientsJson},
+            steps_json = #{stepsJson},
+            tips_json = #{tipsJson},
+            video_json = #{videoJson},
+            status = #{status},
+            reject_reason = #{rejectReason},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateStatus">
+        update cook_recipe_versions
+        set status = #{status},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateReject">
+        update cook_recipe_versions
+        set status = #{status},
+            reject_reason = #{rejectReason},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateVideoJson">
+        update cook_recipe_versions
+        set video_json = #{videoJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

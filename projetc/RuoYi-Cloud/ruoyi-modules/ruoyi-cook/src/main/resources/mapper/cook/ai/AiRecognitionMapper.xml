@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.ai.mapper.AiRecognitionMapper">
+
+    <resultMap id="AiRecognitionResult" type="com.ruoyi.cook.ai.domain.AiImageRecognitionLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="modelId" column="model_id"/>
+        <result property="imageMediaId" column="image_media_id"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="resultJson" column="result_json"/>
+        <result property="nutritionJson" column="nutrition_json"/>
+        <result property="candidatesJson" column="candidates_json"/>
+        <result property="responseTimeMs" column="response_time_ms"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="status" column="status"/>
+        <result property="recognizedName" column="recognized_name"/>
+        <result property="confidence" column="confidence"/>
+        <result property="calories" column="calories"/>
+        <result property="suggestion" column="suggestion"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="userNickname" column="user_nickname"/>
+        <result property="userAvatarUrl" column="user_avatar_url"/>
+        <result property="modelName" column="model_name"/>
+    </resultMap>
+
+    <sql id="RecognitionColumns">
+        r.id, r.user_id, r.model_id, r.image_media_id, r.image_url, r.result_json,
+        r.nutrition_json, r.candidates_json, r.response_time_ms, r.error_message, r.status,
+        r.recognized_name, r.confidence, r.calories, r.suggestion, r.created_at, r.updated_at, r.deleted_at,
+        u.nickname as user_nickname, u.avatar_url as user_avatar_url, am.name as model_name
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="AiRecognitionResult">
+        select <include refid="RecognitionColumns"/>
+        from cook_ai_image_recognition_logs r
+        left join cook_users u on u.id = r.user_id and u.deleted_at is null
+        left join cook_ai_models am on am.id = r.model_id
+        where r.id = #{id}
+          and r.deleted_at is null
+    </select>
+
+    <select id="selectByIdForUser" resultMap="AiRecognitionResult">
+        select <include refid="RecognitionColumns"/>
+        from cook_ai_image_recognition_logs r
+        left join cook_users u on u.id = r.user_id and u.deleted_at is null
+        left join cook_ai_models am on am.id = r.model_id
+        where r.id = #{id}
+          and r.user_id = #{userId}
+          and r.deleted_at is null
+    </select>
+
+    <select id="selectUserList" resultMap="AiRecognitionResult">
+        select <include refid="RecognitionColumns"/>
+        from cook_ai_image_recognition_logs r
+        left join cook_users u on u.id = r.user_id and u.deleted_at is null
+        left join cook_ai_models am on am.id = r.model_id
+        where r.user_id = #{userId}
+          and r.deleted_at is null
+        <if test="status != null and status != ''">
+            and r.status = #{status}
+        </if>
+        order by r.created_at desc, r.id desc
+    </select>
+
+    <select id="selectAdminList" resultMap="AiRecognitionResult">
+        select <include refid="RecognitionColumns"/>
+        from cook_ai_image_recognition_logs r
+        left join cook_users u on u.id = r.user_id and u.deleted_at is null
+        left join cook_ai_models am on am.id = r.model_id
+        where r.deleted_at is null
+        <if test="status != null and status != ''">
+            and r.status = #{status}
+        </if>
+        <if test="userId != null">
+            and r.user_id = #{userId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (r.recognized_name like concat('%', #{keyword}, '%') or u.nickname like concat('%', #{keyword}, '%'))
+        </if>
+        order by r.created_at desc, r.id desc
+    </select>
+
+    <insert id="insertLog" parameterType="com.ruoyi.cook.ai.domain.AiImageRecognitionLog" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_ai_image_recognition_logs (
+            user_id, model_id, image_media_id, image_url, result_json, nutrition_json,
+            candidates_json, response_time_ms, error_message, status, recognized_name,
+            confidence, calories, suggestion
+        ) values (
+            #{userId}, #{modelId}, #{imageMediaId}, #{imageUrl}, #{resultJson}, #{nutritionJson},
+            #{candidatesJson}, #{responseTimeMs}, #{errorMessage}, #{status}, #{recognizedName},
+            #{confidence}, #{calories}, #{suggestion}
+        )
+    </insert>
+
+    <update id="softDeleteForUser">
+        update cook_ai_image_recognition_logs
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and user_id = #{userId}
+          and deleted_at is null
+    </update>
+
+    <update id="softDeleteById" parameterType="Long">
+        update cook_ai_image_recognition_logs
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+</mapper>

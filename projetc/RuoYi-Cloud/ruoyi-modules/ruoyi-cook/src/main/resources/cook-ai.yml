@@ -1,0 +1,49 @@
+# 码上智厨 AI 大模型配置
+# 使用阿里云百炼 OpenAI 兼容接口接入通义千问。
+# 本地联调先写入 DashScope Key，后续可改回环境变量注入。
+
+cook:
+  ai:
+    qwen:
+      # true：启用千问默认 Key/Base URL 兜底；对话实际调用模型仍以数据库默认 chat 模型为准。
+      enabled: true
+      # 北京地域 OpenAI 兼容 base-url；新加坡地域可改为 https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+      api-key: ${AI_API_KEY:}
+      timeout-seconds: 60
+      chat:
+        # AI 营养问答默认模型，可按百炼控制台开通情况调整，例如 qwen-turbo、qwen-flash
+        model-name: qwen-turbo
+      vision:
+        # 拍照识热量默认视觉模型，可按百炼控制台开通情况调整，例如 qwen-vl-plus、qwen-vl-max-latest
+        model-name: qwen-vl-plus
+    rag:
+      enabled: true
+      ingest-on-startup: true
+      docs-dir: ruoyi-modules/ruoyi-cook/storage/embeddingDocs
+      top-k: 5
+      similarity-threshold: 0.55
+      chunk-size: 800
+      chunk-overlap: 120
+      allow-general-fallback: true
+
+spring:
+  ai:
+    dashscope:
+      api-key: ${AI_API_KEY:}
+      base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+      chat:
+        options:
+          model: ${DASHSCOPE_CHAT_MODEL:qwen-turbo}
+      embedding:
+        options:
+          model: ${DASHSCOPE_EMBEDDING_MODEL:text-embedding-v3}
+          dimensions: 1024
+    vectorstore:
+      elasticsearch:
+        initialize-schema: true
+        index-name: cook-ai-knowledge-v1
+        dimensions: 1024
+        similarity: cosine
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://127.0.0.1:9200}

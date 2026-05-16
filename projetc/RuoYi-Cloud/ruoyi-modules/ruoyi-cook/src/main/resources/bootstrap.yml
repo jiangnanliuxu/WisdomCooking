@@ -1,0 +1,68 @@
+# Tomcat
+server:
+  port: 9210
+
+# Spring
+spring:
+  application:
+    name: ruoyi-cook
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      username: ${CONFIG_USERNAME:change_me}
+      password: ${CONFIG_PASSWORD:change_me}
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        ip: 127.0.0.1
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+  config:
+    file-extension: yml
+    import:
+      - optional:classpath:cook-ai.yml
+      - optional:file:./config/cook-oss.yml
+      - optional:nacos:application-${spring.profiles.active}.${spring.config.file-extension}
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.${spring.config.file-extension}
+  # Local fallback configuration for first-stage backend development.
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: 6379
+      database: 0
+  datasource:
+    dynamic:
+      primary: master
+      strict: false
+      datasource:
+        master:
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8}
+          username: ${CONFIG_USERNAME:change_me}
+          password: ${CONFIG_PASSWORD:change_me}
+
+mybatis:
+  typeAliasesPackage: com.ruoyi.cook.**.domain
+  mapperLocations: classpath*:mapper/**/*.xml
+
+cook:
+  media:
+    endpoint: ${COOK_OSS_ENDPOINT:}
+    region: ${COOK_OSS_REGION:}
+    bucket: ${COOK_OSS_BUCKET:}
+    public-base-url: ${COOK_OSS_PUBLIC_BASE_URL:}
+    access-key-id: ${COOK_OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${COOK_OSS_ACCESS_KEY_SECRET:}
+    sts-role-arn: ${COOK_OSS_STS_ROLE_ARN:}
+    upload-prefix: uploads/videos/original
+    hls-prefix: uploads/videos/hls
+    part-size: 5242880
+    sts-duration-seconds: 3600
+    ffmpeg-path: ${FFMPEG_PATH:ffmpeg}
+    temp-dir: ${COOK_MEDIA_TEMP_DIR:${java.io.tmpdir}/cook-video-transcode}
+    hls-segment-seconds: 6
+    transcode-threads: 2

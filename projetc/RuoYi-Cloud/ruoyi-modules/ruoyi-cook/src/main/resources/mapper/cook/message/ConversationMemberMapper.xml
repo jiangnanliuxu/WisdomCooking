@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.message.mapper.ConversationMemberMapper">
+
+    <resultMap id="ConversationMemberResult" type="com.ruoyi.cook.message.domain.ConversationMember">
+        <id property="id" column="id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="unreadCount" column="unread_count"/>
+        <result property="muted" column="is_muted"/>
+        <result property="pinned" column="is_pinned"/>
+        <result property="lastReadMessageId" column="last_read_message_id"/>
+        <result property="joinedAt" column="joined_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+    </resultMap>
+
+    <select id="selectOne" resultMap="ConversationMemberResult">
+        select id, conversation_id, user_id, role, status, unread_count, is_muted, is_pinned,
+               last_read_message_id, joined_at, created_at, updated_at
+        from cook_conversation_members
+        where conversation_id = #{conversationId}
+          and user_id = #{userId}
+        limit 1
+    </select>
+
+    <select id="selectByConversationId" parameterType="Long" resultMap="ConversationMemberResult">
+        select id, conversation_id, user_id, role, status, unread_count, is_muted, is_pinned,
+               last_read_message_id, joined_at, created_at, updated_at
+        from cook_conversation_members
+        where conversation_id = #{conversationId}
+          and status = 'normal'
+        order by role asc, joined_at asc, id asc
+    </select>
+
+    <select id="selectGroupMembers" parameterType="Long" resultMap="ConversationMemberResult">
+        select cm.id, cm.conversation_id, cm.user_id, cm.role, cm.status, cm.unread_count, cm.is_muted,
+               cm.is_pinned, cm.last_read_message_id, cm.joined_at, cm.created_at, cm.updated_at,
+               u.nickname, u.avatar_url
+        from `cook_groups` g
+        inner join cook_conversation_members cm on cm.conversation_id = g.conversation_id
+            and cm.status = 'normal'
+        inner join cook_users u on u.id = cm.user_id and u.deleted_at is null
+        where g.id = #{groupId}
+          and g.deleted_at is null
+        order by cm.role asc, cm.joined_at asc, cm.id asc
+    </select>
+
+    <insert id="insertMember" parameterType="com.ruoyi.cook.message.domain.ConversationMember" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_conversation_members (conversation_id, user_id, role, status, joined_at)
+        values (#{conversationId}, #{userId}, #{role}, #{status}, current_timestamp)
+    </insert>
+
+    <update id="restoreMember">
+        update cook_conversation_members
+        set status = 'normal',
+            role = #{role},
+            joined_at = current_timestamp,
+            updated_at = current_timestamp
+        where conversation_id = #{conversationId}
+          and user_id = #{userId}
+    </update>
+
+    <update id="increaseUnreadForOthers">
+        update cook_conversation_members
+        set unread_count = unread_count + 1,
+            updated_at = current_timestamp
+        where conversation_id = #{conversationId}
+          and user_id &lt;&gt; #{senderId}
+          and status = 'normal'
+    </update>
+
+    <update id="markRead">
+        update cook_conversation_members
+        set unread_count = 0,
+            last_read_message_id = #{lastReadMessageId},
+            updated_at = current_timestamp
+        where conversation_id = #{conversationId}
+          and user_id = #{userId}
+          and status = 'normal'
+    </update>
+
+    <update id="updateSettings">
+        update cook_conversation_members
+        <set>
+            <if test="muted != null">is_muted = #{muted},</if>
+            <if test="pinned != null">is_pinned = #{pinned},</if>
+            updated_at = current_timestamp
+        </set>
+        where conversation_id = #{conversationId}
+          and user_id = #{userId}
+          and status = 'normal'
+    </update>
+
+    <update id="leaveConversation">
+        update cook_conversation_members
+        set status = 'left',
+            unread_count = 0,
+            updated_at = current_timestamp
+        where conversation_id = #{conversationId}
+          and user_id = #{userId}
+          and status = 'normal'
+    </update>
+
+</mapper>

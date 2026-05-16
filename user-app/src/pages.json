@@ -1,0 +1,166 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/search/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/category/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/recipe/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/recipe/form",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/recipe/mine",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/community/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/community/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/community/form",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/community/mine",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ai/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message/private",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message/group",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/works",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/social",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/edit",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/favorites",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/likes",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/checkins",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/feedback",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/auth/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/auth/reset-password",
+      "style": {
+        "navigationBarTitleText": "重置密码"
+      }
+    },
+    {
+      "path": "pages/common/placeholder",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "码上智厨",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#F5F6F8"
+  }
+}

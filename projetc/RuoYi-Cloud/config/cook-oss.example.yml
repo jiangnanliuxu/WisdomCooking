@@ -1,0 +1,16 @@
+cook:
+  media:
+    endpoint: ${COOK_OSS_ENDPOINT:}
+    region: ${COOK_OSS_REGION:}
+    bucket: ${COOK_OSS_BUCKET:}
+    public-base-url: ${COOK_OSS_PUBLIC_BASE_URL:}
+    access-key-id: ${COOK_OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${COOK_OSS_ACCESS_KEY_SECRET:}
+    sts-role-arn: ${COOK_OSS_STS_ROLE_ARN:}
+    upload-prefix: ${COOK_OSS_UPLOAD_PREFIX:uploads/}
+    hls-prefix: ${COOK_OSS_HLS_PREFIX:hls/}
+    part-size: ${COOK_OSS_PART_SIZE:5242880}
+    sts-duration-seconds: ${COOK_OSS_STS_DURATION_SECONDS:900}
+    ffmpeg-path: ${COOK_FFMPEG_PATH:ffmpeg}
+    hls-segment-seconds: ${COOK_HLS_SEGMENT_SECONDS:6}
+    transcode-threads: ${COOK_TRANSCODE_THREADS:1}

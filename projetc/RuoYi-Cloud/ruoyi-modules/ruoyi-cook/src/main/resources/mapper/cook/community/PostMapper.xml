@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.community.mapper.PostMapper">
+
+    <resultMap id="PostResult" type="com.ruoyi.cook.community.domain.Post">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="content" column="content"/>
+        <result property="visibility" column="visibility"/>
+        <result property="mediaIdsJson" column="media_ids_json"/>
+        <result property="topicCodesJson" column="topic_codes_json"/>
+        <result property="location" column="location"/>
+        <result property="relatedRecipeId" column="related_recipe_id"/>
+        <result property="relatedRecipeTitle" column="related_recipe_title"/>
+        <result property="relatedRecipeCategoryCode" column="related_recipe_category_code"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="status" column="status"/>
+        <result property="rejectReason" column="reject_reason"/>
+        <result property="blockReason" column="block_reason"/>
+        <result property="blockAction" column="block_action"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="favoriteCount" column="favorite_count"/>
+        <result property="commentCount" column="comment_count"/>
+        <result property="publishedAt" column="published_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+    </resultMap>
+
+    <sql id="postColumns">
+        id, user_id, content, visibility, media_ids_json, topic_codes_json, location, related_recipe_id, source_type,
+        status, reject_reason, block_reason, block_action, like_count, favorite_count, comment_count,
+        published_at, created_at, updated_at, deleted_at
+    </sql>
+
+    <sql id="listColumns">
+        p.id, p.user_id, p.content, p.visibility, p.media_ids_json, p.topic_codes_json, p.location,
+        p.related_recipe_id, p.source_type, p.status, p.reject_reason, p.block_reason, p.block_action,
+        p.like_count, p.favorite_count, p.comment_count, p.published_at, p.created_at, p.updated_at, p.deleted_at,
+        u.nickname, u.avatar_url, rv.title as related_recipe_title, rr.category_code as related_recipe_category_code
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="PostResult">
+        select <include refid="listColumns"/>
+        from cook_posts p
+        inner join cook_users u on u.id = p.user_id and u.deleted_at is null
+        left join cook_recipes rr on rr.id = p.related_recipe_id and rr.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = rr.current_version_id and rv.deleted_at is null
+        where p.id = #{id}
+          and p.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectByIdForUpdate" parameterType="Long" resultMap="PostResult">
+        select <include refid="listColumns"/>
+        from cook_posts p
+        inner join cook_users u on u.id = p.user_id and u.deleted_at is null
+        left join cook_recipes rr on rr.id = p.related_recipe_id and rr.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = rr.current_version_id and rv.deleted_at is null
+        where p.id = #{id}
+          and p.deleted_at is null
+        limit 1
+        for update
+    </select>
+
+    <select id="selectPublicList" resultMap="PostResult">
+        select <include refid="listColumns"/>
+        from cook_posts p
+        inner join cook_users u on u.id = p.user_id and u.deleted_at is null
+        left join cook_recipes rr on rr.id = p.related_recipe_id and rr.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = rr.current_version_id and rv.deleted_at is null
+        where p.deleted_at is null
+          and p.status = 'published'
+          and p.visibility = 'public'
+        <if test="topicCode != null and topicCode != ''">
+          and p.topic_codes_json like concat('%"', #{topicCode}, '"%')
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (p.content like concat('%', #{keyword}, '%') or u.nickname like concat('%', #{keyword}, '%'))
+        </if>
+        <if test="recipeCategoryCode != null and recipeCategoryCode != '' and recipeCategoryCode != 'other'">
+          and rr.category_code = #{recipeCategoryCode}
+        </if>
+        <if test="recipeCategoryCode == 'other'">
+          and (rr.category_code is null or rr.category_code not in
+          <foreach collection="chineseCategoryCodes" item="code" open="(" separator="," close=")">
+              #{code}
+          </foreach>)
+        </if>
+        order by
+        <if test="preferredCategoryCodes != null and preferredCategoryCodes.size() > 0">
+          case when rr.category_code in
+          <foreach collection="preferredCategoryCodes" item="code" open="(" separator="," close=")">
+              #{code}
+          </foreach>
+          then 0 else 1 end,
+        </if>
+        p.published_at desc, p.id desc
+    </select>
+
+    <select id="selectMine" resultMap="PostResult">
+        select <include refid="listColumns"/>
+        from cook_posts p
+        inner join cook_users u on u.id = p.user_id and u.deleted_at is null
+        left join cook_recipes rr on rr.id = p.related_recipe_id and rr.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = rr.current_version_id and rv.deleted_at is null
+        where p.deleted_at is null
+          and p.user_id = #{userId}
+        <if test="status != null and status != ''">
+          and p.status = #{status}
+        </if>
+        order by p.updated_at desc, p.id desc
+    </select>
+
+    <select id="selectAdminList" resultMap="PostResult">
+        select <include refid="listColumns"/>
+        from cook_posts p
+        inner join cook_users u on u.id = p.user_id and u.deleted_at is null
+        left join cook_recipes rr on rr.id = p.related_recipe_id and rr.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = rr.current_version_id and rv.deleted_at is null
+        where p.deleted_at is null
+        <if test="status != null and status != ''">
+          and p.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (p.content like concat('%', #{keyword}, '%') or u.nickname like concat('%', #{keyword}, '%'))
+        </if>
+        order by p.updated_at desc, p.id desc
+    </select>
+
+    <insert id="insertPost" parameterType="com.ruoyi.cook.community.domain.Post" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_posts (
+            user_id, content, visibility, media_ids_json, topic_codes_json, location, related_recipe_id,
+            source_type, status
+        ) values (
+            #{userId}, #{content}, #{visibility}, #{mediaIdsJson}, #{topicCodesJson}, #{location},
+            #{relatedRecipeId}, #{sourceType}, #{status}
+        )
+    </insert>
+
+    <update id="updatePost" parameterType="com.ruoyi.cook.community.domain.Post">
+        update cook_posts
+        set content = #{content},
+            visibility = #{visibility},
+            media_ids_json = #{mediaIdsJson},
+            topic_codes_json = #{topicCodesJson},
+            location = #{location},
+            related_recipe_id = #{relatedRecipeId},
+            source_type = #{sourceType},
+            status = #{status},
+            reject_reason = #{rejectReason},
+            block_reason = #{blockReason},
+            block_action = #{blockAction},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="updateStatus">
+        update cook_posts
+        set status = #{status},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="approvePost" parameterType="Long">
+        update cook_posts
+        set status = 'published',
+            reject_reason = null,
+            block_reason = null,
+            block_action = null,
+            published_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="blockPost">
+        update cook_posts
+        set status = 'blocked',
+            block_reason = #{reason},
+            block_action = #{action},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="restorePost" parameterType="Long">
+        update cook_posts
+        set status = 'published',
+            block_reason = null,
+            block_action = null,
+            published_at = coalesce(published_at, current_timestamp),
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="softDeleteByOwner">
+        update cook_posts
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and user_id = #{userId}
+          and deleted_at is null
+    </update>
+
+    <update id="softDeleteById" parameterType="Long">
+        update cook_posts
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="increaseCounter">
+        update cook_posts
+        <set>
+            <choose>
+                <when test="column == 'like_count'">like_count = like_count + 1,</when>
+                <when test="column == 'favorite_count'">favorite_count = favorite_count + 1,</when>
+                <when test="column == 'comment_count'">comment_count = comment_count + 1,</when>
+            </choose>
+            updated_at = current_timestamp
+        </set>
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="decreaseCounter">
+        update cook_posts
+        <set>
+            <choose>
+                <when test="column == 'like_count'">like_count = greatest(like_count - 1, 0),</when>
+                <when test="column == 'favorite_count'">favorite_count = greatest(favorite_count - 1, 0),</when>
+                <when test="column == 'comment_count'">comment_count = greatest(comment_count - 1, 0),</when>
+            </choose>
+            updated_at = current_timestamp
+        </set>
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.checkin.mapper.CheckinMapper">
+
+    <resultMap id="CheckinResult" type="com.ruoyi.cook.checkin.domain.Checkin">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="recipeId" column="recipe_id"/>
+        <result property="recipeTitle" column="recipe_title"/>
+        <result property="generatedPostId" column="generated_post_id"/>
+        <result property="checkinDate" column="checkin_date"/>
+        <result property="content" column="content"/>
+        <result property="mediaIdsJson" column="media_ids_json"/>
+        <result property="sourceJson" column="source_json"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <resultMap id="CheckinVoResult" type="com.ruoyi.cook.checkin.vo.CheckinVo">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="recipeId" column="recipe_id"/>
+        <result property="generatedPostId" column="generated_post_id"/>
+        <result property="checkinDate" column="checkin_date"/>
+        <result property="content" column="content"/>
+        <result property="mediaIds" column="media_ids_json" typeHandler="com.ruoyi.cook.common.handler.JsonLongListTypeHandler"/>
+        <result property="source" column="source_json" typeHandler="com.ruoyi.cook.common.handler.JsonObjectTypeHandler"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectById" parameterType="Long" resultMap="CheckinResult">
+        select id, user_id, recipe_id, generated_post_id, checkin_date, content, media_ids_json, source_json,
+               created_at, updated_at, deleted_at
+        from cook_checkins
+        where id = #{id}
+          and deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectByIdForUpdate" parameterType="Long" resultMap="CheckinResult">
+        select id, user_id, recipe_id, generated_post_id, checkin_date, content, media_ids_json, source_json,
+               created_at, updated_at, deleted_at
+        from cook_checkins
+        where id = #{id}
+          and deleted_at is null
+        limit 1
+        for update
+    </select>
+
+    <select id="selectByDate" resultMap="CheckinVoResult">
+        select c.id, c.user_id, c.recipe_id, rv.title as recipe_title, c.generated_post_id, c.checkin_date,
+               c.content, c.media_ids_json, c.source_json, c.created_at
+        from cook_checkins c
+        left join cook_recipes r on r.id = c.recipe_id and r.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = r.current_version_id and rv.deleted_at is null
+        where c.user_id = #{userId}
+          and c.checkin_date = #{checkinDate}
+          and c.deleted_at is null
+        order by c.created_at desc, c.id desc
+    </select>
+
+    <select id="selectByRange" resultMap="CheckinVoResult">
+        select c.id, c.user_id, c.recipe_id, rv.title as recipe_title, c.generated_post_id, c.checkin_date,
+               c.content, c.media_ids_json, c.source_json, c.created_at
+        from cook_checkins c
+        left join cook_recipes r on r.id = c.recipe_id and r.deleted_at is null
+        left join cook_recipe_versions rv on rv.id = r.current_version_id and rv.deleted_at is null
+        where c.user_id = #{userId}
+          and c.checkin_date between #{startDate} and #{endDate}
+          and c.deleted_at is null
+        order by c.checkin_date desc, c.created_at desc, c.id desc
+    </select>
+
+    <select id="selectRecentDates" parameterType="Long" resultType="java.time.LocalDate">
+        select distinct checkin_date
+        from cook_checkins
+        where user_id = #{userId}
+          and deleted_at is null
+        order by checkin_date desc
+    </select>
+
+    <select id="countByUser" resultType="java.lang.Long">
+        select count(1)
+        from cook_checkins
+        where user_id = #{userId}
+          and deleted_at is null
+    </select>
+
+    <select id="countByUserAndRange" resultType="java.lang.Long">
+        select count(1)
+        from cook_checkins
+        where user_id = #{userId}
+          and checkin_date between #{startDate} and #{endDate}
+          and deleted_at is null
+    </select>
+
+    <select id="selectLatestCheckinDate" parameterType="Long" resultType="java.time.LocalDate">
+        select max(checkin_date)
+        from cook_checkins
+        where user_id = #{userId}
+          and deleted_at is null
+    </select>
+
+    <insert id="insertCheckin" parameterType="com.ruoyi.cook.checkin.domain.Checkin" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_checkins (user_id, recipe_id, generated_post_id, checkin_date, content, media_ids_json, source_json)
+        values (#{userId}, #{recipeId}, #{generatedPostId}, #{checkinDate}, #{content}, #{mediaIdsJson}, #{sourceJson})
+    </insert>
+
+    <update id="updateCheckin" parameterType="com.ruoyi.cook.checkin.domain.Checkin">
+        update cook_checkins
+        set recipe_id = #{recipeId},
+            checkin_date = #{checkinDate},
+            content = #{content},
+            media_ids_json = #{mediaIdsJson},
+            source_json = #{sourceJson},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="softDelete">
+        update cook_checkins
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and user_id = #{userId}
+          and deleted_at is null
+    </update>
+
+    <update id="updateGeneratedPostId">
+        update cook_checkins
+        set generated_post_id = #{generatedPostId},
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

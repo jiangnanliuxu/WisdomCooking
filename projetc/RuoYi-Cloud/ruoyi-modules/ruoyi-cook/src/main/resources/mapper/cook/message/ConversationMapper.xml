@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.message.mapper.ConversationMapper">
+
+    <resultMap id="ConversationResult" type="com.ruoyi.cook.message.domain.Conversation">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="lastMessageId" column="last_message_id"/>
+        <result property="lastMessagePreview" column="last_message_preview"/>
+        <result property="lastMessageAt" column="last_message_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="unreadCount" column="unread_count"/>
+        <result property="muted" column="is_muted"/>
+        <result property="pinned" column="is_pinned"/>
+        <result property="title" column="title"/>
+        <result property="avatarUrl" column="avatar_url"/>
+    </resultMap>
+
+    <select id="selectById" parameterType="Long" resultMap="ConversationResult">
+        select id, type, target_id, last_message_id, last_message_preview, last_message_at,
+               created_at, updated_at, deleted_at
+        from cook_conversations
+        where id = #{id}
+          and deleted_at is null
+    </select>
+
+    <select id="selectPrivateConversation" resultMap="ConversationResult">
+        select c.id, c.type, c.target_id, c.last_message_id, c.last_message_preview, c.last_message_at,
+               c.created_at, c.updated_at, c.deleted_at
+        from cook_conversations c
+        inner join cook_conversation_members m1 on m1.conversation_id = c.id
+            and m1.user_id = #{userId}
+            and m1.status = 'normal'
+        inner join cook_conversation_members m2 on m2.conversation_id = c.id
+            and m2.user_id = #{targetUserId}
+            and m2.status = 'normal'
+        where c.type = 'private'
+          and c.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectNotificationConversation" parameterType="Long" resultMap="ConversationResult">
+        select c.id, c.type, c.target_id, c.last_message_id, c.last_message_preview, c.last_message_at,
+               c.created_at, c.updated_at, c.deleted_at
+        from cook_conversations c
+        inner join cook_conversation_members cm on cm.conversation_id = c.id
+            and cm.user_id = #{userId}
+            and cm.status = 'normal'
+        where c.type = 'notification'
+          and c.target_id = #{userId}
+          and c.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectUserConversations" resultMap="ConversationResult">
+        select c.id, c.type, c.target_id, c.last_message_id, c.last_message_preview, c.last_message_at,
+               c.created_at, c.updated_at, c.deleted_at,
+               cm.unread_count, cm.is_muted, cm.is_pinned,
+               case
+                   when c.type = 'private' then pu.nickname
+                   when c.type = 'group' then g.name
+                   else '系统通知'
+               end as title,
+               case
+                   when c.type = 'private' then pu.avatar_url
+                   else null
+               end as avatar_url
+        from cook_conversations c
+        inner join cook_conversation_members cm on cm.conversation_id = c.id
+            and cm.user_id = #{userId}
+            and cm.status = 'normal'
+        left join cook_conversation_members other_cm on other_cm.conversation_id = c.id
+            and other_cm.user_id &lt;&gt; #{userId}
+            and other_cm.status = 'normal'
+            and c.type = 'private'
+        left join cook_users pu on pu.id = other_cm.user_id and pu.deleted_at is null
+        left join `cook_groups` g on g.id = c.target_id and g.deleted_at is null
+        where c.deleted_at is null
+        <if test="type != null and type != ''">
+          and c.type = #{type}
+        </if>
+        order by cm.is_pinned desc, c.last_message_at desc, c.updated_at desc, c.id desc
+    </select>
+
+    <insert id="insertConversation" parameterType="com.ruoyi.cook.message.domain.Conversation" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_conversations (type, target_id)
+        values (#{type}, #{targetId})
+    </insert>
+
+    <update id="updateLastMessage">
+        update cook_conversations
+        set last_message_id = #{lastMessageId},
+            last_message_preview = #{preview},
+            last_message_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

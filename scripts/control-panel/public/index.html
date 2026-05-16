@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>智慧食刻启动控制台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-play" viewBox="0 0 24 24">
+        <path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M17.7 7.2A7.2 7.2 0 0 0 5.1 11H2.8l3.4 3.4L9.7 11H7.1a5.2 5.2 0 0 1 9.1-2.4l1.5-1.4Zm-11.4 9.6A7.2 7.2 0 0 0 18.9 13h2.3l-3.4-3.4L14.3 13h2.6a5.2 5.2 0 0 1-9.1 2.4l-1.5 1.4Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="icon-stop" viewBox="0 0 24 24">
+        <path d="M7 7h10v10H7V7Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="icon-terminal" viewBox="0 0 24 24">
+        <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm1.7 4.4 2.5 2.6-2.5 2.6 1.3 1.2 3.7-3.8L7 8.2 5.7 9.4Zm6.1 5.4h6v-1.7h-6v1.7Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="icon-open" viewBox="0 0 24 24">
+        <path d="M6 5h7v2H8v9h9v-5h2v7H6V5Zm9 0h4v4h-2V8.4l-5.3 5.3-1.4-1.4L15.6 7H15V5Z" fill="currentColor"/>
+      </symbol>
+    </svg>
+
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>智慧食刻启动控制台</h1>
+          <p>本地模块启停、健康状态和错误日志</p>
+        </div>
+        <div class="topbar__meta">
+          <span id="busyBadge" class="badge badge--idle">空闲</span>
+          <span id="lastUpdated" class="timestamp">等待状态刷新</span>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="启动控制">
+        <button class="command command--start" data-action="start">
+          <svg><use href="#icon-play"></use></svg>
+          <span>启动全部</span>
+        </button>
+        <button class="command command--restart" data-action="restart">
+          <svg><use href="#icon-refresh"></use></svg>
+          <span>重启全部</span>
+        </button>
+        <button class="command command--stop" data-action="stop">
+          <svg><use href="#icon-stop"></use></svg>
+          <span>停止全部</span>
+        </button>
+        <button class="command" data-action="status">
+          <svg><use href="#icon-terminal"></use></svg>
+          <span>检查状态</span>
+        </button>
+        <label class="toggle">
+          <input id="skipBuild" type="checkbox" checked>
+          <span>启动/重启时跳过 Maven 打包</span>
+        </label>
+      </section>
+
+      <section class="links" aria-label="访问地址">
+        <a href="http://127.0.0.1:5173/" target="_blank" rel="noreferrer">
+          <span>管理端</span>
+          <svg><use href="#icon-open"></use></svg>
+        </a>
+        <a href="http://127.0.0.1:5174/" target="_blank" rel="noreferrer">
+          <span>用户端</span>
+          <svg><use href="#icon-open"></use></svg>
+        </a>
+        <a href="http://127.0.0.1:8080/actuator/health" target="_blank" rel="noreferrer">
+          <span>网关健康</span>
+          <svg><use href="#icon-open"></use></svg>
+        </a>
+      </section>
+
+      <section class="status-panel">
+        <div class="section-title">
+          <h2>模块状态</h2>
+          <button id="refreshStatus" class="small-button">刷新</button>
+        </div>
+        <div id="statusGrid" class="status-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="workspace">
+        <section class="console-panel">
+          <div class="section-title">
+            <h2>命令控制台</h2>
+            <button id="clearConsole" class="small-button">清空</button>
+          </div>
+          <pre id="commandConsole" class="console" aria-live="polite"></pre>
+        </section>
+
+        <section class="console-panel">
+          <div class="section-title section-title--stack">
+            <h2>报错控制台</h2>
+            <div class="filters">
+              <select id="logService" aria-label="选择日志模块">
+                <option value="all">全部模块</option>
+                <option value="ruoyi-system">ruoyi-system</option>
+                <option value="ruoyi-cook">ruoyi-cook</option>
+                <option value="ruoyi-auth">ruoyi-auth</option>
+                <option value="ruoyi-gateway">ruoyi-gateway</option>
+                <option value="admin-web">admin-web</option>
+                <option value="user-app">user-app</option>
+              </select>
+              <label class="compact-toggle">
+                <input id="errorsOnly" type="checkbox" checked>
+                <span>只看错误</span>
+              </label>
+              <button id="refreshLogs" class="small-button">刷新</button>
+            </div>
+          </div>
+          <pre id="errorConsole" class="console console--errors" aria-live="polite"></pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

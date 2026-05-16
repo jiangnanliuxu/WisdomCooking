@@ -1,0 +1,90 @@
+# Tomcat
+server:
+  port: 8080
+
+# Spring
+spring: 
+  application:
+    # 应用名称
+    name: ruoyi-gateway
+  profiles:
+    # 环境配置
+    active: dev
+  cloud:
+    nacos:
+      username: ${CONFIG_USERNAME:change_me}
+      password: ${CONFIG_PASSWORD:change_me}
+      discovery:
+        # 服务注册地址
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        ip: 127.0.0.1
+      config:
+        # 配置中心地址
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: ruoyi-auth
+              uri: lb://ruoyi-auth
+              predicates:
+                - Path=/auth/**
+              filters:
+                - StripPrefix=1
+            - id: ruoyi-system
+              uri: lb://ruoyi-system
+              predicates:
+                - Path=/system/**
+              filters:
+                - StripPrefix=1
+            - id: ruoyi-cook-api
+              uri: lb://ruoyi-cook
+              predicates:
+                - Path=/api/v1/**
+              filters:
+                - StripPrefix=0
+            - id: ruoyi-cook-admin
+              uri: lb://ruoyi-cook
+              predicates:
+                - Path=/api/admin/v1/**
+              filters:
+                - StripPrefix=0
+    sentinel:
+      # 取消控制台懒加载
+      eager: true
+      transport:
+        # 控制台地址
+        dashboard: 127.0.0.1:8718
+      # nacos配置持久化
+      datasource:
+        ds1:
+          nacos:
+            server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+            dataId: sentinel-ruoyi-gateway
+            groupId: DEFAULT_GROUP
+            data-type: json
+            rule-type: gw-flow
+  config:
+    # 配置文件格式
+    file-extension: yml
+    import:
+      - nacos:application-${spring.profiles.active}.${spring.config.file-extension}
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.${spring.config.file-extension}
+
+security:
+  captcha:
+    enabled: true
+    type: math
+  ignore:
+    whites:
+      - /auth/logout
+      - /auth/login
+      - /auth/register
+      - /system/**
+      - /api/v1/**
+      - /api/admin/v1/**
+      - /actuator/**

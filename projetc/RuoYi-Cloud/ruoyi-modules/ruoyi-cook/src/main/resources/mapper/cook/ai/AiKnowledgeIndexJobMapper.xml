@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.ai.mapper.AiKnowledgeIndexJobMapper">
+
+    <resultMap id="AiKnowledgeIndexJobResult" type="com.ruoyi.cook.ai.domain.AiKnowledgeIndexJob">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="jobType" column="job_type"/>
+        <result property="status" column="status"/>
+        <result property="totalDocuments" column="total_documents"/>
+        <result property="indexedDocuments" column="indexed_documents"/>
+        <result property="failedDocuments" column="failed_documents"/>
+        <result property="message" column="message"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="finishedAt" column="finished_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="selectById" parameterType="Long" resultMap="AiKnowledgeIndexJobResult">
+        select id, document_id, job_type, status, total_documents, indexed_documents,
+               failed_documents, message, started_at, finished_at, created_at
+        from cook_ai_knowledge_index_jobs
+        where id = #{id}
+    </select>
+
+    <select id="selectList" resultMap="AiKnowledgeIndexJobResult">
+        select id, document_id, job_type, status, total_documents, indexed_documents,
+               failed_documents, message, started_at, finished_at, created_at
+        from cook_ai_knowledge_index_jobs
+        <where>
+            <if test="documentId != null">
+                document_id = #{documentId}
+            </if>
+        </where>
+        order by created_at desc, id desc
+    </select>
+
+    <insert id="insertJob" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeIndexJob" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_ai_knowledge_index_jobs (
+            document_id, job_type, status, total_documents, indexed_documents,
+            failed_documents, message, started_at
+        ) values (
+            #{documentId}, #{jobType}, #{status}, #{totalDocuments}, #{indexedDocuments},
+            #{failedDocuments}, #{message}, current_timestamp
+        )
+    </insert>
+
+    <update id="updateProgress" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeIndexJob">
+        update cook_ai_knowledge_index_jobs
+        set total_documents = #{totalDocuments},
+            indexed_documents = #{indexedDocuments},
+            failed_documents = #{failedDocuments},
+            message = #{message}
+        where id = #{id}
+    </update>
+
+    <update id="finishJob" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeIndexJob">
+        update cook_ai_knowledge_index_jobs
+        set status = #{status},
+            total_documents = #{totalDocuments},
+            indexed_documents = #{indexedDocuments},
+            failed_documents = #{failedDocuments},
+            message = #{message},
+            finished_at = current_timestamp
+        where id = #{id}
+    </update>
+</mapper>

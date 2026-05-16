@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.recipe.mapper.CommentMapper">
+
+    <resultMap id="CommentResult" type="com.ruoyi.cook.recipe.domain.Comment">
+        <id property="id" column="id"/>
+        <result property="targetType" column="target_type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="content" column="content"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatarUrl" column="avatar_url"/>
+    </resultMap>
+
+    <select id="selectById" parameterType="Long" resultMap="CommentResult">
+        select c.id, c.target_type, c.target_id, c.user_id, c.parent_id, c.content, c.like_count, c.status,
+               c.created_at, c.updated_at, c.deleted_at, u.nickname, u.avatar_url
+        from cook_comments c
+        inner join cook_users u on u.id = c.user_id and u.deleted_at is null
+        where c.id = #{id}
+          and c.deleted_at is null
+        limit 1
+    </select>
+
+    <select id="selectList" resultMap="CommentResult">
+        select c.id, c.target_type, c.target_id, c.user_id, c.parent_id, c.content, c.like_count, c.status,
+               c.created_at, c.updated_at, c.deleted_at, u.nickname, u.avatar_url
+        from cook_comments c
+        inner join cook_users u on u.id = c.user_id and u.deleted_at is null
+        where c.target_type = #{targetType}
+          and c.target_id = #{targetId}
+          and c.status = 'normal'
+          and c.deleted_at is null
+        order by c.created_at asc, c.id asc
+    </select>
+
+    <insert id="insertComment" parameterType="com.ruoyi.cook.recipe.domain.Comment" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_comments (target_type, target_id, user_id, parent_id, content, status)
+        values (#{targetType}, #{targetId}, #{userId}, #{parentId}, #{content}, #{status})
+    </insert>
+
+    <update id="softDeleteByOwner">
+        update cook_comments
+        set deleted_at = current_timestamp,
+            updated_at = current_timestamp
+        where id = #{id}
+          and user_id = #{userId}
+          and deleted_at is null
+    </update>
+
+    <update id="increaseLikeCount" parameterType="Long">
+        update cook_comments
+        set like_count = like_count + 1,
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+    <update id="decreaseLikeCount" parameterType="Long">
+        update cook_comments
+        set like_count = greatest(like_count - 1, 0),
+            updated_at = current_timestamp
+        where id = #{id}
+          and deleted_at is null
+    </update>
+
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.cook.ai.mapper.AiKnowledgeChunkMapper">
+
+    <resultMap id="AiKnowledgeChunkResult" type="com.ruoyi.cook.ai.domain.AiKnowledgeChunk">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="chunkIndex" column="chunk_index"/>
+        <result property="vectorId" column="vector_id"/>
+        <result property="content" column="content"/>
+        <result property="tokenCount" column="token_count"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectByDocumentId" parameterType="Long" resultMap="AiKnowledgeChunkResult">
+        select id, document_id, chunk_index, vector_id, content, token_count, status, created_at, updated_at
+        from cook_ai_knowledge_chunks
+        where document_id = #{documentId}
+        order by chunk_index asc
+    </select>
+
+    <select id="countByDocumentId" parameterType="Long" resultType="int">
+        select count(1)
+        from cook_ai_knowledge_chunks
+        where document_id = #{documentId}
+    </select>
+
+    <insert id="insertChunk" parameterType="com.ruoyi.cook.ai.domain.AiKnowledgeChunk" useGeneratedKeys="true" keyProperty="id">
+        insert into cook_ai_knowledge_chunks (
+            document_id, chunk_index, vector_id, content, token_count, status
+        ) values (
+            #{documentId}, #{chunkIndex}, #{vectorId}, #{content}, #{tokenCount}, #{status}
+        )
+    </insert>
+
+    <delete id="deleteByDocumentId" parameterType="Long">
+        delete from cook_ai_knowledge_chunks
+        where document_id = #{documentId}
+    </delete>
+</mapper>
