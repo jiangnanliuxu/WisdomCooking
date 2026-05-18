@@ -4,6 +4,8 @@
 
 当前公开仓库主要收录管理端、后端微服务和 SQL 脚本，用于项目展示、功能说明和工程交付。
 
+详细版项目说明见 [docs/README-详细版.md](./docs/README-详细版.md)。
+
 ## 项目定位
 
 - 面向用户侧：菜谱浏览与创作、社区互动、AI 营养问答、食物识图、消息沟通、打卡反馈
@@ -62,6 +64,8 @@ WisdomCooking
 ### 管理端仪表盘
 
 ![管理端仪表盘](./docs/assets/readme/browser-admin-dashboard-20260515.png)
+
+更多页面说明与完整截图说明见 [README 详细版](./docs/README-详细版.md)。
 
 ## 业务拓扑
 
